@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('clone from github') {
+            
+			steps {
+			
+			echo 'cloning from github'
+                git branch: 'main', credentialsId: 'git', url: 'https://github.com/lavs1055/mindcircuit13.git'
+            }
+        }
+		stage('build with maven') {
+		
+            steps {
+			echo 'generating artifact using maven'
+                sh 'mvn clean install'
+				}
+            }
+			stage('deploying to tomcat') {
+			
+            steps {
+			echo 'deploying artifact into tomcat'
+                 deploy adapters: [tomcat9(credentialsId: 'tomcatb13', path: '', url: 'http://54.174.51.38:8091/')], contextPath: 'mc_app', war: '**/*.war'
+            }
+        }
+    }
+}
