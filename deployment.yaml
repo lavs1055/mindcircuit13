@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fb-deployment
+  labels:
+    app: facebook
+spec:
+  replicas: 3
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: facebook
+
+  template:
+    metadata:
+      name: facebook_pod
+      labels:
+        app: facebook
+        version: fb-ac-v1
+    spec:
+      containers:
+        - name:  fb-pod-cont
+          image: klavs1055/myfirstrepo:pythontestimage2
+          ports:
+            - containerPort: 8080
