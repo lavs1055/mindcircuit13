@@ -26,6 +26,6 @@ spec:
     spec:
       containers:
         - name:  fb-pod-cont
-          image: klavs1055/myfirstrepo:pythontestimage2
+          image: klavs1055/myfirstrepo:mindcircuit_image
           ports:
             - containerPort: 8080
