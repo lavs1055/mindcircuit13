@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                echo 'Cloning from GitHub'
+                git branch: 'main', url: 'https://github.com/lavs1055/mindcircuit13.git'
+            }
+        }
+        stage('SonarQube Scan') {
+            steps {
+                echo 'Scanning the code with SonarQube'
+                sh 'ls -ltr'
+                sh ''' 
+                    mvn sonar:sonar \
+                    -Dsonar.host.url=http://100.26.227.158:9000/ \
+                    -Dsonar.login=squ_8c8abad7919b02d396efa4ea854e08310dc4d0b2
+                '''
+            }
+        }
+        stage('Build Artifact') {
+            steps {
+                echo 'Building Artifact'
+                // Clean and package the project using Maven
+                sh 'mvn clean package'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker Image'
+                // Build the Docker image using the Dockerfile in the project
+                // Tag the image with the current build number
+                sh "docker build -t klavs1055/myfirstrepo:${BUILD_NUMBER} ."
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing to Docker Hub'
+                script {
+                    // Use Docker Hub credentials to access Docker Hub
+                    withCredentials([string(credentialsId: 'dockerhub', variable: 'dockerhub')]) {
+                        sh "docker login -u klavs1055 -p ${dockerhub}"
+                    }
+                    // Push the Docker image to Docker Hub
+                    sh "docker push klavs1055/myfirstrepo:${BUILD_NUMBER}"
+                    echo 'Pushed to Docker Hub'
+                }
+            }
+        }
+        stage('Update Deployment File') {
+            environment {
+                GIT_REPO_NAME = "mindcircuit13"
+                GIT_USER_NAME = "lavs1055"
+            }
+            steps {
+                echo 'Updating Deployment File'
+                // Use GitHub token to access GitHub
+                withCredentials([string(credentialsId: 'githubtoken', variable: 'githubtoken')]) {
+                    sh ''' 
+                        # Configure git user
+                        git config user.email "lavs.kari@gmail.com"
+                        git config user.name "klavs1055"
+                        # Replace the tag in the deployment YAML file with the current build number
+                        sed -i "s/myfirstrepo:.*/myfirstrepo:${BUILD_NUMBER}/g" deploymentfolder/deployment.yaml
+                        # Stage all changes
+                        git add .
+                        # Commit changes with a message containing the build number
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        # Push changes to the main branch of the GitHub repository
+                         git push https://${githubtoken}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    '''
+                }
+            }
+        }
+    }
+}
