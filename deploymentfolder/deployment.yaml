@@ -26,6 +26,6 @@ spec:
     spec:
       containers:
         - name:  fb-pod-cont
-          image: klavs1055/myfirstrepo:13
+          image: klavs1055/myfirstrepo:14
           ports:
             - containerPort: 8080
